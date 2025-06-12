@@ -43,7 +43,6 @@ struct ContentView: View {
             modelContext.insert(newItem)
         }
     }
-
     private func deleteItems(offsets: IndexSet) {
         withAnimation {
             for index in offsets {
