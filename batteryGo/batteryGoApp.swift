@@ -1,16 +1,190 @@
-import SwiftUI
-import IOKit.ps
-import Combine
 import AppKit
+import Combine
+import IOKit.ps
+import SwiftUI
+
+class MenuBarController: ObservableObject {
+    private var statusItem: NSStatusItem?
+    private var cancellables = Set<AnyCancellable>()
+    
+    @Published var batteryPercentage: Int = BatteryInfo.currentPercentage()
+    @Published var isLowPowerMode: Bool = BatteryInfo.isLowPowerModeEnabled()
+    @Published var showPercentage: Bool = false
+    @Published var powerSource: String = BatteryInfo.powerSource()
+    @Published var isCharging: Bool = BatteryInfo.isCharging()
+    @Published var fullyCharged: Bool = BatteryInfo.fullyCharged()
+    
+    init() {
+        createMenuBar()
+        startTimer()
+    }
+    
+    private func createMenuBar() {
+        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        
+        if let button = statusItem?.button {
+            updateButtonTitle()
+            button.target = self
+        }
+        
+        createMenu()
+    }
+    
+    private func updateButtonTitle() {
+        guard let button = statusItem?.button else { return }
+        
+        let text = showPercentage ? "\(batteryPercentage)" : "\(batteryPercentage)%"
+        
+        var textColor: NSColor = .controlTextColor
+        
+        let isEffectivelyCharging = isCharging || powerSource == (isKoreanLanguage() ? "어댑터" : "Power Adapter")
+        
+        if !isEffectivelyCharging && batteryPercentage <= 20 {
+            textColor = .systemRed
+        } else if isLowPowerMode {
+            textColor = .systemYellow
+        }
+        
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 13, weight: textColor == .systemRed ? .bold : .regular),
+            .foregroundColor: textColor
+        ]
+        
+        let attributedString = NSAttributedString(string: text, attributes: attributes)
+        button.attributedTitle = attributedString
+        
+        if powerSource == (isKoreanLanguage() ? "어댑터" : "Power Adapter") {
+            // 아이콘 색상 텍스트컬러와 통일
+            let iconColor: NSColor
+            if !isEffectivelyCharging && batteryPercentage <= 20 {
+                iconColor = .systemRed
+            } else if isLowPowerMode {
+                iconColor = .systemYellow
+            } else {
+                iconColor = .white
+            }
+            
+            let symbolName: String
+            if isCharging {
+                symbolName = "bolt.fill"
+            } else if fullyCharged {
+                symbolName = "bolt.fill"
+            } else {
+                symbolName = "bolt"
+            }
+            
+            // 색상이 적용된 아이콘 생성
+            let configuration = NSImage.SymbolConfiguration(pointSize: 12, weight: .regular)
+                .applying(.init(hierarchicalColor: iconColor))
+            
+            if let image = NSImage(systemSymbolName: symbolName, accessibilityDescription: nil) {
+                button.image = image.withSymbolConfiguration(configuration)
+            }
+            
+            button.imagePosition = .imageLeading
+        } else {
+            button.image = nil
+        }
+    }
+
+    private func createMenu() {
+        let menu = NSMenu()
+        
+        // 충전 시간 정보
+        if isCharging {
+            let timeToFull = BatteryInfo.timeRemainingUntilFull()
+            let timeToFullText = (timeToFull == "계산 중" ? (isKoreanLanguage() ? "계산 중" : "Calculating") : (isKoreanLanguage() ? timeToFull : localizedTimeString(timeToFull)))
+            let item = NSMenuItem(title: isKoreanLanguage() ? "충전 완료까지: \(timeToFullText)" : "Time to Full: \(timeToFullText)", action: nil, keyEquivalent: "")
+            menu.addItem(item)
+        }
+        
+        // 사용 시간 정보
+        if powerSource == (isKoreanLanguage() ? "배터리" : "Battery") {
+            let usageTime = BatteryInfo.estimatedUsageTime()
+            let usageTimeText = (usageTime == "계산 중" ? (isKoreanLanguage() ? "계산 중" : "Calculating") : (isKoreanLanguage() ? usageTime : localizedTimeString(usageTime)))
+            let item = NSMenuItem(title: isKoreanLanguage() ? "남은 사용 시간: \(usageTimeText)" : "Time Remaining: \(usageTimeText)", action: nil, keyEquivalent: "")
+            menu.addItem(item)
+        }
+        
+        // 전원 소스
+        let powerSourceItem = NSMenuItem(title: isKoreanLanguage() ? "전원 소스: \(powerSource)" : "Power Source: \(powerSource)", action: nil, keyEquivalent: "")
+        menu.addItem(powerSourceItem)
+        
+        menu.addItem(NSMenuItem.separator())
+        
+        // 퍼센트 숨기기 토글
+        let toggleItem = NSMenuItem(title: isKoreanLanguage() ? "퍼센트 숨기기" : "Hide Percentage", action: #selector(togglePercentage), keyEquivalent: "")
+        toggleItem.target = self
+        toggleItem.state = showPercentage ? .on : .off
+        menu.addItem(toggleItem)
+        
+        menu.addItem(NSMenuItem.separator())
+        
+        // 배터리 설정
+        let settingsItem = NSMenuItem(title: isKoreanLanguage() ? "배터리 설정..." : "Battery Settings...", action: #selector(openBatterySettings), keyEquivalent: "")
+        settingsItem.target = self
+        menu.addItem(settingsItem)
+        
+        menu.addItem(NSMenuItem.separator())
+        
+        // 종료
+        let quitItem = NSMenuItem(title: isKoreanLanguage() ? "종료" : "Quit", action: #selector(quit), keyEquivalent: "")
+        quitItem.target = self
+        menu.addItem(quitItem)
+        
+        statusItem?.menu = menu
+    }
+    
+    @objc private func togglePercentage() {
+        showPercentage.toggle()
+        updateButtonTitle()
+        createMenu() // 메뉴 업데이트
+    }
+    
+    @objc private func openBatterySettings() {
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.battery") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+    
+    @objc private func quit() {
+        NSApplication.shared.terminate(nil)
+    }
+    
+    private func startTimer() {
+        Timer.publish(every: 1, on: .main, in: .common) // 3초 → 1초로 변경 (충전 상태 빠른 감지)
+            .autoconnect()
+            .sink { [weak self] _ in
+                self?.updateBatteryInfo()
+            }
+            .store(in: &cancellables)
+    }
+    
+    private func updateBatteryInfo() {
+        batteryPercentage = BatteryInfo.currentPercentage()
+        isLowPowerMode = BatteryInfo.isLowPowerModeEnabled()
+        powerSource = BatteryInfo.powerSource()
+        isCharging = BatteryInfo.isCharging()
+        fullyCharged = BatteryInfo.fullyCharged()
+        
+        updateButtonTitle()
+        createMenu() // 메뉴 업데이트
+    }
+    
+    private func localizedTimeString(_ str: String) -> String {
+        if isKoreanLanguage() { return str }
+        return str.replacingOccurrences(of: "시간", with: "h").replacingOccurrences(of: "분", with: "m")
+    }
+}
 
 // 앱 시작 시 독에서 숨기기 설정
 class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
-        
+
         // 모든 윈도우에 대한 기본 탭 모드 비활성화
         NSWindow.allowsAutomaticWindowTabbing = false
-        
+
         // 실행 중인 앱이 독에 표시되지 않도록 설정
         if let window = NSApplication.shared.windows.first {
             window.titlebarAppearsTransparent = true
@@ -20,134 +194,33 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 }
+
 // 언어 감지 함수 (전역)
 func isKoreanLanguage() -> Bool {
     let systemLanguageCodes = UserDefaults.standard.stringArray(forKey: "AppleLanguages") ?? []
     let systemFirstLanguageCode = systemLanguageCodes.first ?? "ko-KR"
 
-    
     return systemFirstLanguageCode == "ko-KR"
 }
 
 @main
 struct batteryGoApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-    @State private var batteryPercentage: Int = BatteryInfo.currentPercentage()
-    @State private var isLowPowerMode: Bool = BatteryInfo.isLowPowerModeEnabled()
-    @State private var showPercentage: Bool = false
-    @State private var powerSource: String = BatteryInfo.powerSource()
-    @State private var isCharging: Bool = BatteryInfo.isCharging()
-    @State private var fullyCharged: Bool = BatteryInfo.fullyCharged()
-    let refreshTimer = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
+    @StateObject private var menuBarController = MenuBarController()
+    
     var body: some Scene {
-        MenuBarExtra {
-            if isCharging {
-                let timeToFull = BatteryInfo.timeRemainingUntilFull()
-                let timeToFullText = (timeToFull == "계산 중" ? (isKoreanLanguage() ? "계산 중" : "Calculating") : (isKoreanLanguage() ? timeToFull : localizedTimeString(timeToFull)))
-                Button(isKoreanLanguage() ? "충전 완료까지: \(timeToFullText)" : "Time to Full: \(timeToFullText)") {
-                    // 아무 동작 없음
-                }
-            }
-            if (powerSource == (isKoreanLanguage() ? "배터리" : "Battery")) {
-                let usageTime = BatteryInfo.estimatedUsageTime()
-                let usageTimeText = (usageTime == "계산 중" ? (isKoreanLanguage() ? "계산 중" : "Calculating") : (isKoreanLanguage() ? usageTime : localizedTimeString(usageTime)))
-                Button(isKoreanLanguage() ? "남은 사용 시간: \(usageTimeText)" : "Time Remaining: \(usageTimeText)") {
-                    // 아무 동작 없음
-                }
-            }
-            Button(isKoreanLanguage() ? "전원 소스: \(powerSource)" : "Power Source: \(powerSource)") {
-                // 아무 동작 없음
-            }
-            if powerSource == (isKoreanLanguage() ? "어댑터" : "Power Adapter") && !isCharging {
-                Text(isKoreanLanguage() ? "충전중이 아님" : "Battery is not charging")
-                    .font(.footnote)
-                    .foregroundColor(.secondary)
-            }
-//            Button(isKoreanLanguage() ? "배터리 상태: \(batteryCondition)" : "Battery Condition: \(batteryCondition)") {
-//                // 아무 동작 없음
-//            }
-            Divider()
-            Toggle(isKoreanLanguage() ? "퍼센트 숨기기" : "Hide Percentage", isOn: $showPercentage)
-            //            Toggle("저전력 모드", isOn: Binding(
-            //                get: { isLowPowerMode },
-            //                set: { newValue in
-            //                    BatteryInfo.setLowPowerMode(enabled: newValue) { success in
-            //                        if success {
-            //                            isLowPowerMode = newValue
-            //                        } else {
-            //                            isLowPowerMode = false
-            //                            let alert = NSAlert()
-            //                            alert.messageText = "관리자 권한이 필요합니다"
-            //                            alert.informativeText = "저전력 모드 변경은 관리자 권한이 필요합니다. 시스템 환경설정에서 직접 변경해 주세요."
-            //                            alert.addButton(withTitle: "배터리 설정 열기")
-            //                            alert.addButton(withTitle: "취소")
-            //                            let response = alert.runModal()
-            //                            if response == .alertFirstButtonReturn {
-            //                                if let url = URL(string: "x-apple.systempreferences:com.apple.preference.battery") {
-            //                                    NSWorkspace.shared.open(url)
-            //                                }
-            //                            }
-            //                        }
-            //                    }
-            //                }
-            //            ))
-            .disabled(!BatteryInfo.canControlLowPowerMode)
-            Divider()
-            Button(isKoreanLanguage() ? "배터리 설정..." : "Battery Settings...") {
-                if let url = URL(string: "x-apple.systempreferences:com.apple.preference.battery") {
-                    NSWorkspace.shared.open(url)
-                }
-            }
-            Divider()
-            Button(isKoreanLanguage() ? "종료" : "Quit") {
-                NSApplication.shared.terminate(nil)
-            }
-        } label: {
-            HStack(spacing: 4) {
-                if powerSource == (isKoreanLanguage() ? "어댑터" : "Power Adapter") {
-                    if isCharging {
-                        Image(systemName: "bolt.fill") // 충전 중
-                            .imageScale(.small)
-                    } else if fullyCharged {
-                        Image(systemName: "bolt") // 완충/충전 안함
-                            .imageScale(.small)
-                            .rotationEffect(.degrees(-90))
-                    } else {
-                        Image(systemName: "bolt") // 충전 안함(어댑터 연결)
-                            .imageScale(.small)
-                            .rotationEffect(.degrees(-90))
-                    }
-                }
-                // 배터리 사용 중에는 아무 아이콘도 안 보임(원하면 배터리 아이콘 추가 가능)
-                if showPercentage {
-                    Text("\(batteryPercentage)")
-                        .font(.system(size: 9))
-                        .foregroundColor(isLowPowerMode ? .yellow : .primary)
-                } else {
-                    Text("\(batteryPercentage)%")
-                        .font(.system(size: 9))
-                        .foregroundColor(isLowPowerMode ? .yellow : .primary)
-                }
-            }
-            .onReceive(refreshTimer) { _ in
-                batteryPercentage = BatteryInfo.currentPercentage()
-                isLowPowerMode = BatteryInfo.isLowPowerModeEnabled()
-                powerSource = BatteryInfo.powerSource()
-                isCharging = BatteryInfo.isCharging()
-                fullyCharged = BatteryInfo.fullyCharged()
-            }
+        // 빈 WindowGroup - 실제로는 메뉴바만 사용
+        WindowGroup {
+            EmptyView()
+                .frame(width: 0, height: 0)
+                .hidden()
         }
-        .menuBarExtraStyle(.menu)
-    }
-
-    func localizedTimeString(_ str: String) -> String {
-        if isKoreanLanguage() { return str }
-        // '6시간 20분' -> '6h 20m'
-        return str.replacingOccurrences(of: "시간", with: "h").replacingOccurrences(of: "분", with: "m")
+        .windowResizability(.contentSize)
+        .windowStyle(.hiddenTitleBar)
     }
 }
 
-struct BatteryInfo {
+enum BatteryInfo {
     static func currentPercentage() -> Int {
         guard let snapshot = IOPSCopyPowerSourcesInfo()?.takeRetainedValue(),
               let sources = IOPSCopyPowerSourcesList(snapshot)?.takeRetainedValue() as? [CFTypeRef],
@@ -164,12 +237,14 @@ struct BatteryInfo {
         }
         return false
     }
+
     static var canControlLowPowerMode: Bool {
         if #available(macOS 12.0, *) {
             return true
         }
         return false
     }
+
     //    static func setLowPowerMode(enabled: Bool, completion: @escaping (Bool) -> Void) {
     //        if #available(macOS 12.0, *) {
     //            let task = Process()
@@ -195,14 +270,14 @@ struct BatteryInfo {
               let source = sources.first,
               let description = IOPSGetPowerSourceDescription(snapshot, source)?.takeUnretainedValue() as? [String: Any],
               let time = description[kIOPSTimeToFullChargeKey as String] as? Int,
-              time >= 0 else {
-            print("[BatteryInfo] timeRemainingUntilFull: 계산 중 (값 없음 또는 음수)")
+              time >= 0
+        else {
             return "계산 중"
         }
         let h = time / 60
         let m = time % 60
         let result = h > 0 ? "\(h)시간 \(m)분" : "\(m)분"
-        print("[BatteryInfo] timeRemainingUntilFull: \(result)")
+    
         return result
     }
 
@@ -212,24 +287,23 @@ struct BatteryInfo {
               let source = sources.first,
               let description = IOPSGetPowerSourceDescription(snapshot, source)?.takeUnretainedValue() as? [String: Any],
               let time = description[kIOPSTimeToEmptyKey as String] as? Int,
-              time >= 0 else {
-            print("[BatteryInfo] estimatedUsageTime: 계산 중 (값 없음 또는 음수)")
+              time >= 0
+        else {
             return "계산 중"
         }
         let h = time / 60
         let m = time % 60
         let result = h > 0 ? "\(h)시간 \(m)분" : "\(m)분"
-        print("[BatteryInfo] estimatedUsageTime: \(result)")
         return result
     }
-
 
     static func isCharging() -> Bool {
         guard let snapshot = IOPSCopyPowerSourcesInfo()?.takeRetainedValue(),
               let sources = IOPSCopyPowerSourcesList(snapshot)?.takeRetainedValue() as? [CFTypeRef],
               let source = sources.first,
               let description = IOPSGetPowerSourceDescription(snapshot, source)?.takeUnretainedValue() as? [String: Any],
-              let isCharging = description[kIOPSIsChargingKey] as? Bool else {
+              let isCharging = description[kIOPSIsChargingKey] as? Bool
+        else {
             return false
         }
         return isCharging
@@ -240,7 +314,8 @@ struct BatteryInfo {
               let sources = IOPSCopyPowerSourcesList(snapshot)?.takeRetainedValue() as? [CFTypeRef],
               let source = sources.first,
               let description = IOPSGetPowerSourceDescription(snapshot, source)?.takeUnretainedValue() as? [String: Any],
-              let ps = description[kIOPSPowerSourceStateKey as String] as? String else {
+              let ps = description[kIOPSPowerSourceStateKey as String] as? String
+        else {
             return "-"
         }
         if ps == kIOPSACPowerValue { return isKoreanLanguage() ? "어댑터" : "Power Adapter" }
@@ -253,7 +328,8 @@ struct BatteryInfo {
               let sources = IOPSCopyPowerSourcesList(snapshot)?.takeRetainedValue() as? [CFTypeRef],
               let source = sources.first,
               let description = IOPSGetPowerSourceDescription(snapshot, source)?.takeUnretainedValue() as? [String: Any],
-              let cond = description[kIOPSBatteryHealthKey as String] as? String else {
+              let cond = description[kIOPSBatteryHealthKey as String] as? String
+        else {
             return "-"
         }
         if isKoreanLanguage() {
@@ -272,7 +348,8 @@ struct BatteryInfo {
               let sources = IOPSCopyPowerSourcesList(snapshot)?.takeRetainedValue() as? [CFTypeRef],
               let source = sources.first,
               let description = IOPSGetPowerSourceDescription(snapshot, source)?.takeUnretainedValue() as? [String: Any],
-              let charged = description["FullyCharged"] as? Bool else {
+              let charged = description["FullyCharged"] as? Bool
+        else {
             return false
         }
         return charged
