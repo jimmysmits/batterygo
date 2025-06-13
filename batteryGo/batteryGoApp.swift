@@ -5,7 +5,11 @@ import AppKit
 
 // 언어 감지 함수 (전역)
 func isKoreanLanguage() -> Bool {
-    Locale.current.language.languageCode?.identifier == "ko"
+    let systemLanguageCodes = UserDefaults.standard.stringArray(forKey: "AppleLanguages") ?? []
+    let systemFirstLanguageCode = systemLanguageCodes.first ?? "ko-KR"
+
+    
+    return systemFirstLanguageCode == "ko-KR"
 }
 
 @main
