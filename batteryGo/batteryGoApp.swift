@@ -3,6 +3,23 @@ import IOKit.ps
 import Combine
 import AppKit
 
+// 앱 시작 시 독에서 숨기기 설정
+class AppDelegate: NSObject, NSApplicationDelegate {
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        NSApp.setActivationPolicy(.accessory)
+        
+        // 모든 윈도우에 대한 기본 탭 모드 비활성화
+        NSWindow.allowsAutomaticWindowTabbing = false
+        
+        // 실행 중인 앱이 독에 표시되지 않도록 설정
+        if let window = NSApplication.shared.windows.first {
+            window.titlebarAppearsTransparent = true
+            window.tabbingMode = .disallowed
+            window.collectionBehavior = [.fullScreenNone]
+            window.isExcludedFromWindowsMenu = true
+        }
+    }
+}
 // 언어 감지 함수 (전역)
 func isKoreanLanguage() -> Bool {
     let systemLanguageCodes = UserDefaults.standard.stringArray(forKey: "AppleLanguages") ?? []
@@ -14,6 +31,7 @@ func isKoreanLanguage() -> Bool {
 
 @main
 struct batteryGoApp: App {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @State private var batteryPercentage: Int = BatteryInfo.currentPercentage()
     @State private var isLowPowerMode: Bool = BatteryInfo.isLowPowerModeEnabled()
     @State private var showPercentage: Bool = false
