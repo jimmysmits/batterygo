@@ -12,8 +12,10 @@ struct batteryGoApp: App {
     let refreshTimer = Timer.publish(every: 10, on: .main, in: .common).autoconnect()
     var body: some Scene {
         MenuBarExtra {
-            Button("충전 완료까지: \(BatteryInfo.timeRemainingUntilFull())") {}
-                .disabled(true)
+            if BatteryInfo.isCharging() {
+                Button("충전 완료까지: \(BatteryInfo.timeRemainingUntilFull())") {}
+                    .disabled(true)
+            }
             Button("남은 사용 시간: \(BatteryInfo.estimatedUsageTime())") {}
                 .disabled(true)
             Divider()
