@@ -1,6 +1,7 @@
 import SwiftUI
 import IOKit.ps
 import Combine
+import AppKit
 
 
 @main
@@ -17,13 +18,29 @@ struct batteryGoApp: App {
                 .disabled(true)
             Divider()
             Toggle("퍼센트 숨기기", isOn: $showPercentage)
-            Toggle("저전력 모드", isOn: Binding(
-                get: { isLowPowerMode },
-                set: { newValue in
-                    isLowPowerMode = newValue
-                    BatteryInfo.setLowPowerMode(enabled: newValue)
-                }
-            ))
+            //            Toggle("저전력 모드", isOn: Binding(
+            //                get: { isLowPowerMode },
+            //                set: { newValue in
+            //                    BatteryInfo.setLowPowerMode(enabled: newValue) { success in
+            //                        if success {
+            //                            isLowPowerMode = newValue
+            //                        } else {
+            //                            isLowPowerMode = false
+            //                            let alert = NSAlert()
+            //                            alert.messageText = "관리자 권한이 필요합니다"
+            //                            alert.informativeText = "저전력 모드 변경은 관리자 권한이 필요합니다. 시스템 환경설정에서 직접 변경해 주세요."
+            //                            alert.addButton(withTitle: "배터리 설정 열기")
+            //                            alert.addButton(withTitle: "취소")
+            //                            let response = alert.runModal()
+            //                            if response == .alertFirstButtonReturn {
+            //                                if let url = URL(string: "x-apple.systempreferences:com.apple.preference.battery") {
+            //                                    NSWorkspace.shared.open(url)
+            //                                }
+            //                            }
+            //                        }
+            //                    }
+            //                }
+            //            ))
             .disabled(!BatteryInfo.canControlLowPowerMode)
             Divider()
             Button("배터리 설정...") {
@@ -83,14 +100,25 @@ struct BatteryInfo {
         }
         return false
     }
-    static func setLowPowerMode(enabled: Bool) {
-        if #available(macOS 12.0, *) {
-            let task = Process()
-            task.launchPath = "/usr/bin/pmset"
-            task.arguments = ["-a", "lowpowermode", enabled ? "1" : "0"]
-            try? task.run()
-        }
-    }
+    //    static func setLowPowerMode(enabled: Bool, completion: @escaping (Bool) -> Void) {
+    //        if #available(macOS 12.0, *) {
+    //            let task = Process()
+    //            task.launchPath = "/usr/bin/pmset"
+    //            task.arguments = ["-a", "lowpowermode", enabled ? "1" : "0"]
+    //            let pipe = Pipe()
+    //            task.standardError = pipe
+    //            do {
+    //                try task.run()
+    //                task.waitUntilExit()
+    //                let success = (task.terminationStatus == 0)
+    //                completion(success)
+    //            } catch {
+    //                completion(false)
+    //            }
+    //        } else {
+    //            completion(false)
+    //        }
+    //    }
     static func timeRemainingUntilFull() -> String {
         guard let snapshot = IOPSCopyPowerSourcesInfo()?.takeRetainedValue(),
               let sources = IOPSCopyPowerSourcesList(snapshot)?.takeRetainedValue() as? [CFTypeRef],
