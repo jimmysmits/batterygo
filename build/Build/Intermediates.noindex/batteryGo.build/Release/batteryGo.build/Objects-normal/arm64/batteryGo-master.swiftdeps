@@ -1,0 +1,8 @@
+version: "Apple Swift version 6.1 (swiftlang-6.1.0.110.21 clang-1700.0.13.3)"
+options: "9bb9725e7fb555fe104cdc813cc3a5bc330682923122f4ab4bca9b9afaa4525b"
+build_start_time: [1749785172, 621530000]
+build_end_time: [1749785177, 472983000]
+inputs:
+  "/Users/GO/Desktop/00.IOS/batteryGo/batteryGo/batteryGoApp.swift": [1749784896, 842192653]
+  ? "/Users/GO/Desktop/00.IOS/batteryGo/build/Build/Intermediates.noindex/batteryGo.build/Release/batteryGo.build/DerivedSources/GeneratedAssetSymbols.swift"
+  : [1749785172, 536244292]

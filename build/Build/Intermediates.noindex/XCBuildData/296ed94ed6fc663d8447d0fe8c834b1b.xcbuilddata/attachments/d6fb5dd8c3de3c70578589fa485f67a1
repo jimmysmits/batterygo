@@ -1,0 +1,30 @@
+{
+  "" : {
+    "const-values" : "/Users/GO/Desktop/00.IOS/batteryGo/build/Build/Intermediates.noindex/batteryGo.build/Release/batteryGo.build/Objects-normal/arm64/batteryGo-master.swiftconstvalues",
+    "dependencies" : "/Users/GO/Desktop/00.IOS/batteryGo/build/Build/Intermediates.noindex/batteryGo.build/Release/batteryGo.build/Objects-normal/arm64/batteryGo-master.d",
+    "diagnostics" : "/Users/GO/Desktop/00.IOS/batteryGo/build/Build/Intermediates.noindex/batteryGo.build/Release/batteryGo.build/Objects-normal/arm64/batteryGo-master.dia",
+    "emit-module-dependencies" : "/Users/GO/Desktop/00.IOS/batteryGo/build/Build/Intermediates.noindex/batteryGo.build/Release/batteryGo.build/Objects-normal/arm64/batteryGo-master-emit-module.d",
+    "emit-module-diagnostics" : "/Users/GO/Desktop/00.IOS/batteryGo/build/Build/Intermediates.noindex/batteryGo.build/Release/batteryGo.build/Objects-normal/arm64/batteryGo-master-emit-module.dia",
+    "swift-dependencies" : "/Users/GO/Desktop/00.IOS/batteryGo/build/Build/Intermediates.noindex/batteryGo.build/Release/batteryGo.build/Objects-normal/arm64/batteryGo-master.swiftdeps"
+  },
+  "/Users/GO/Desktop/00.IOS/batteryGo/batteryGo/ContentView.swift" : {
+    "index-unit-output-path" : "/batteryGo.build/Release/batteryGo.build/Objects-normal/arm64/ContentView.o",
+    "llvm-bc" : "/Users/GO/Desktop/00.IOS/batteryGo/build/Build/Intermediates.noindex/batteryGo.build/Release/batteryGo.build/Objects-normal/arm64/ContentView.bc",
+    "object" : "/Users/GO/Desktop/00.IOS/batteryGo/build/Build/Intermediates.noindex/batteryGo.build/Release/batteryGo.build/Objects-normal/arm64/ContentView.o"
+  },
+  "/Users/GO/Desktop/00.IOS/batteryGo/batteryGo/Item.swift" : {
+    "index-unit-output-path" : "/batteryGo.build/Release/batteryGo.build/Objects-normal/arm64/Item.o",
+    "llvm-bc" : "/Users/GO/Desktop/00.IOS/batteryGo/build/Build/Intermediates.noindex/batteryGo.build/Release/batteryGo.build/Objects-normal/arm64/Item.bc",
+    "object" : "/Users/GO/Desktop/00.IOS/batteryGo/build/Build/Intermediates.noindex/batteryGo.build/Release/batteryGo.build/Objects-normal/arm64/Item.o"
+  },
+  "/Users/GO/Desktop/00.IOS/batteryGo/batteryGo/batteryGoApp.swift" : {
+    "index-unit-output-path" : "/batteryGo.build/Release/batteryGo.build/Objects-normal/arm64/batteryGoApp.o",
+    "llvm-bc" : "/Users/GO/Desktop/00.IOS/batteryGo/build/Build/Intermediates.noindex/batteryGo.build/Release/batteryGo.build/Objects-normal/arm64/batteryGoApp.bc",
+    "object" : "/Users/GO/Desktop/00.IOS/batteryGo/build/Build/Intermediates.noindex/batteryGo.build/Release/batteryGo.build/Objects-normal/arm64/batteryGoApp.o"
+  },
+  "/Users/GO/Desktop/00.IOS/batteryGo/build/Build/Intermediates.noindex/batteryGo.build/Release/batteryGo.build/DerivedSources/GeneratedAssetSymbols.swift" : {
+    "index-unit-output-path" : "/batteryGo.build/Release/batteryGo.build/Objects-normal/arm64/GeneratedAssetSymbols.o",
+    "llvm-bc" : "/Users/GO/Desktop/00.IOS/batteryGo/build/Build/Intermediates.noindex/batteryGo.build/Release/batteryGo.build/Objects-normal/arm64/GeneratedAssetSymbols.bc",
+    "object" : "/Users/GO/Desktop/00.IOS/batteryGo/build/Build/Intermediates.noindex/batteryGo.build/Release/batteryGo.build/Objects-normal/arm64/GeneratedAssetSymbols.o"
+  }
+}

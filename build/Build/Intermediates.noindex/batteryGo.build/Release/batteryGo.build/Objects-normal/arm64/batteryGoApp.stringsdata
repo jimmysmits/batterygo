@@ -1,0 +1,72 @@
+{
+  "source": "/Users/GO/Desktop/00.IOS/batteryGo/batteryGo/batteryGoApp.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "충전 완료까지: %@",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 14
+        }
+      },
+      {
+        "comment": "",
+        "key": "남은 사용 시간: %@",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 16
+        }
+      },
+      {
+        "comment": "",
+        "key": "퍼센트 숨기기",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 19
+        }
+      },
+      {
+        "comment": "",
+        "key": "저전력 모드",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 20
+        }
+      },
+      {
+        "comment": "",
+        "key": "배터리 설정...",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 29
+        }
+      },
+      {
+        "comment": "",
+        "key": "종료",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 35
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 45
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld%%",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 49
+        }
+      }
+    ]
+  },
+  "version": 1
+}

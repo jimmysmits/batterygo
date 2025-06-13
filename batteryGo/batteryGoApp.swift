@@ -1,52 +1,62 @@
 import SwiftUI
 import IOKit.ps
+import Combine
 
 
 @main
 struct batteryGoApp: App {
     @State private var batteryPercentage: Int = BatteryInfo.currentPercentage()
     @State private var isLowPowerMode: Bool = BatteryInfo.isLowPowerModeEnabled()
+    @State private var showPercentage: Bool = true
+    let refreshTimer = Timer.publish(every: 10, on: .main, in: .common).autoconnect()
     var body: some Scene {
-        MenuBarExtra(content: {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("충전 완료까지: \(BatteryInfo.timeRemainingUntilFull())")
-                Text("남은 사용 시간: \(BatteryInfo.estimatedUsageTime())")
-                Divider()
-                Toggle("저전력 모드", isOn: Binding(
-                    get: { isLowPowerMode },
-                    set: { newValue in
-                        isLowPowerMode = newValue
-                        BatteryInfo.setLowPowerMode(enabled: newValue)
-                    }
-                ))
-                .disabled(!BatteryInfo.canControlLowPowerMode)
-                // macOS 배터리 패널과 유사하게 메뉴 맨 아래에 스타일 추가
-                VStack(spacing: 4) {
-                    Divider()
-                    HStack {
-                        Text("배터리 설정...")
-                            .onTapGesture {
-                                if let url = URL(string: "x-apple.systempreferences:com.apple.preference.battery") {
-                                    NSWorkspace.shared.open(url)
-                                }
-                            }
-                        // 좌측 정렬: Spacer 제거
-                    }
+        MenuBarExtra {
+            Button("충전 완료까지: \(BatteryInfo.timeRemainingUntilFull())") {}
+                .disabled(true)
+            Button("남은 사용 시간: \(BatteryInfo.estimatedUsageTime())") {}
+                .disabled(true)
+            Divider()
+            Toggle("퍼센트 숨기기", isOn: $showPercentage)
+            Toggle("저전력 모드", isOn: Binding(
+                get: { isLowPowerMode },
+                set: { newValue in
+                    isLowPowerMode = newValue
+                    BatteryInfo.setLowPowerMode(enabled: newValue)
+                }
+            ))
+            .disabled(!BatteryInfo.canControlLowPowerMode)
+            Divider()
+            Button("배터리 설정...") {
+                if let url = URL(string: "x-apple.systempreferences:com.apple.preference.battery") {
+                    NSWorkspace.shared.open(url)
                 }
             }
-            .padding()
-            .frame(width: 250)
-        }, label: {
+            Divider()
+            Button("종료") {
+                NSApplication.shared.terminate(nil)
+            }
+        } label: {
             HStack(spacing: 4) {
                 if BatteryInfo.isCharging() {
                     Image(systemName: "bolt.fill")
                         .imageScale(.small)
                 }
-                Text("\(batteryPercentage)%")
-                    .font(.system(size: 9))
+                if showPercentage {
+                    Text("\(batteryPercentage)")
+                        .font(.system(size: 9))
+                        .foregroundColor(isLowPowerMode ? .yellow : .primary)
+                } else {
+                    Text("\(batteryPercentage)%")
+                        .font(.system(size: 9))
+                        .foregroundColor(isLowPowerMode ? .yellow : .primary)
+                }
             }
-        })
-        .menuBarExtraStyle(.window)
+            .onReceive(refreshTimer) { _ in
+                batteryPercentage = BatteryInfo.currentPercentage()
+                isLowPowerMode = BatteryInfo.isLowPowerModeEnabled()
+            }
+        }
+        .menuBarExtraStyle(.menu)
     }
 }
 
