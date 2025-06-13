@@ -8,16 +8,18 @@ import AppKit
 struct batteryGoApp: App {
     @State private var batteryPercentage: Int = BatteryInfo.currentPercentage()
     @State private var isLowPowerMode: Bool = BatteryInfo.isLowPowerModeEnabled()
-    @State private var showPercentage: Bool = true
+    @State private var showPercentage: Bool = false
     let refreshTimer = Timer.publish(every: 10, on: .main, in: .common).autoconnect()
     var body: some Scene {
         MenuBarExtra {
             if BatteryInfo.isCharging() {
-                Button("충전 완료까지: \(BatteryInfo.timeRemainingUntilFull())") {}
-                    .disabled(true)
+                Button("충전 완료까지: \(BatteryInfo.timeRemainingUntilFull())") {
+                    // 아무 동작 없음
+                }
             }
-            Button("남은 사용 시간: \(BatteryInfo.estimatedUsageTime())") {}
-                .disabled(true)
+            Button("남은 사용 시간: \(BatteryInfo.estimatedUsageTime())") {
+                // 아무 동작 없음
+            }
             Divider()
             Toggle("퍼센트 숨기기", isOn: $showPercentage)
             //            Toggle("저전력 모드", isOn: Binding(
