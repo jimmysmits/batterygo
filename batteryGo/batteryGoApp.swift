@@ -10,18 +10,20 @@ struct batteryGoApp: App {
     @State private var isLowPowerMode: Bool = BatteryInfo.isLowPowerModeEnabled()
     @State private var showPercentage: Bool = false
     let refreshTimer = Timer.publish(every: 10, on: .main, in: .common).autoconnect()
+    // 언어 감지
+    let isKorean: Bool = Locale.current.language.languageCode?.identifier == "ko"
     var body: some Scene {
         MenuBarExtra {
             if BatteryInfo.isCharging() {
-                Button("충전 완료까지: \(BatteryInfo.timeRemainingUntilFull())") {
+                Button(isKorean ? "충전 완료까지: \(BatteryInfo.timeRemainingUntilFull())" : "Time to Full: \(localizedTimeString(BatteryInfo.timeRemainingUntilFull()))") {
                     // 아무 동작 없음
                 }
             }
-            Button("남은 사용 시간: \(BatteryInfo.estimatedUsageTime())") {
+            Button(isKorean ? "남은 사용 시간: \(BatteryInfo.estimatedUsageTime())" : "Time Remaining: \(localizedTimeString(BatteryInfo.estimatedUsageTime()))") {
                 // 아무 동작 없음
             }
             Divider()
-            Toggle("퍼센트 숨기기", isOn: $showPercentage)
+            Toggle(isKorean ? "퍼센트 숨기기" : "Hide Percentage", isOn: $showPercentage)
             //            Toggle("저전력 모드", isOn: Binding(
             //                get: { isLowPowerMode },
             //                set: { newValue in
@@ -47,13 +49,13 @@ struct batteryGoApp: App {
             //            ))
             .disabled(!BatteryInfo.canControlLowPowerMode)
             Divider()
-            Button("배터리 설정...") {
+            Button(isKorean ? "배터리 설정..." : "Battery Settings...") {
                 if let url = URL(string: "x-apple.systempreferences:com.apple.preference.battery") {
                     NSWorkspace.shared.open(url)
                 }
             }
             Divider()
-            Button("종료") {
+            Button(isKorean ? "종료" : "Quit") {
                 NSApplication.shared.terminate(nil)
             }
         } label: {
@@ -78,6 +80,12 @@ struct batteryGoApp: App {
             }
         }
         .menuBarExtraStyle(.menu)
+    }
+
+    func localizedTimeString(_ str: String) -> String {
+        if isKorean { return str }
+        // '6시간 20분' -> '6h 20m'
+        return str.replacingOccurrences(of: "시간", with: "h").replacingOccurrences(of: "분", with: "m")
     }
 }
 
