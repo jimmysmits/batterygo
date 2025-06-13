@@ -90,6 +90,12 @@ class MenuBarController: ObservableObject {
     private func createMenu() {
         let menu = NSMenu()
         
+        // 실시간 전력 소모(Watt) 표시
+        // if let watt = BatteryInfo.currentWattUsage() {
+        //     let wattItem = NSMenuItem(title: String(format: isKoreanLanguage() ? "실시간 전력: %.2f W" : "Current Power: %.2f W", watt), action: nil, keyEquivalent: "")
+        //     menu.addItem(wattItem)
+        // }
+        
         // 충전 시간 정보
         if isCharging {
             let timeToFull = BatteryInfo.timeRemainingUntilFull()
@@ -353,5 +359,18 @@ enum BatteryInfo {
             return false
         }
         return charged
+    }
+
+    static func currentWattUsage() -> Double? {
+        guard let snapshot = IOPSCopyPowerSourcesInfo()?.takeRetainedValue(),
+              let sources = IOPSCopyPowerSourcesList(snapshot)?.takeRetainedValue() as? [CFTypeRef],
+              let source = sources.first,
+              let description = IOPSGetPowerSourceDescription(snapshot, source)?.takeUnretainedValue() as? [String: Any],
+              let current = description["Current"] as? Int, // mA
+              let voltage = description["Voltage"] as? Int // mV
+        else {
+            return nil
+        }
+        return Double(current) * Double(voltage) / 1_000_000.0
     }
 }
