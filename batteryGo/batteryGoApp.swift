@@ -2,6 +2,7 @@ import AppKit
 import Combine
 import IOKit.ps
 import SwiftUI
+import ServiceManagement
 
 class MenuBarController: ObservableObject {
     private var statusItem: NSStatusItem?
@@ -13,8 +14,17 @@ class MenuBarController: ObservableObject {
     @Published var powerSource: String = BatteryInfo.powerSource()
     @Published var isCharging: Bool = BatteryInfo.isCharging()
     @Published var fullyCharged: Bool = BatteryInfo.fullyCharged()
+    @Published var launchAtLogin: Bool {
+        didSet {
+            setLaunchAtLogin(launchAtLogin)
+            UserDefaults.standard.set(launchAtLogin, forKey: "launchAtLogin")
+        }
+    }
     
     init() {
+        let saved = UserDefaults.standard.object(forKey: "launchAtLogin") as? Bool
+        self.launchAtLogin = saved ?? true
+        setLaunchAtLogin(self.launchAtLogin)
         createMenuBar()
         startTimer()
     }
@@ -124,6 +134,12 @@ class MenuBarController: ObservableObject {
         toggleItem.state = showPercentage ? .on : .off
         menu.addItem(toggleItem)
         
+        // Launch at Login 토글
+        let launchAtLoginItem = NSMenuItem(title: isKoreanLanguage() ? "로그인 시 실행" : "Launch at Login", action: #selector(toggleLaunchAtLogin), keyEquivalent: "")
+        launchAtLoginItem.target = self
+        launchAtLoginItem.state = launchAtLogin ? .on : .off
+        menu.addItem(launchAtLoginItem)
+        
         menu.addItem(NSMenuItem.separator())
         
         // 배터리 설정
@@ -157,6 +173,11 @@ class MenuBarController: ObservableObject {
         NSApplication.shared.terminate(nil)
     }
     
+    @objc private func toggleLaunchAtLogin() {
+        launchAtLogin.toggle()
+        createMenu() // 메뉴 업데이트
+    }
+    
     private func startTimer() {
         Timer.publish(every: 1, on: .main, in: .common) // 3초 → 1초로 변경 (충전 상태 빠른 감지)
             .autoconnect()
@@ -180,6 +201,16 @@ class MenuBarController: ObservableObject {
     private func localizedTimeString(_ str: String) -> String {
         if isKoreanLanguage() { return str }
         return str.replacingOccurrences(of: "시간", with: "h").replacingOccurrences(of: "분", with: "m")
+    }
+    
+    private func setLaunchAtLogin(_ enabled: Bool) {
+        if #available(macOS 14.0, *) {
+            if enabled {
+                try? SMAppService.mainApp.register()
+            } else {
+                try? SMAppService.mainApp.unregister()
+            }
+        }
     }
 }
 
