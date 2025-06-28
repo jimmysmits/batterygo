@@ -64,7 +64,7 @@ class MenuBarController: ObservableObject {
         button.attributedTitle = attributedString
         
         if powerSource == (isKoreanLanguage() ? "어댑터" : "Power Adapter") {
-            // 아이콘 색상 텍스트컬러와 통일 (단, 빨강/노랑은 기존대로)
+            // 아이콘 색상 텍스트컬러와 통일
             let iconColor: NSColor
             if !isEffectivelyCharging && batteryPercentage <= 20 {
                 iconColor = .systemRed
